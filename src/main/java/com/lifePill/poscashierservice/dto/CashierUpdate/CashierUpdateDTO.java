@@ -16,5 +16,6 @@ public class CashierUpdateDTO {
     private String cashierPhone;
     private double cashierSalary;
     private Role role;
+    private String branchCode;
 
 }
