@@ -27,5 +27,7 @@ public class CashierDTO {
     private Date dateOfBirth;
     private Role role;
     private int pin;
+    private String branchCode;
+
     //private Order order;
 }

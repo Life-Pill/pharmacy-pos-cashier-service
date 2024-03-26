@@ -1,5 +1,7 @@
 package com.lifePill.poscashierservice.service.Impl;
 
+import com.lifePill.poscashierservice.dto.ApiResponseDTO;
+import com.lifePill.poscashierservice.dto.BranchDTO;
 import com.lifePill.poscashierservice.dto.CashierDTO;
 import com.lifePill.poscashierservice.dto.CashierUpdate.*;
 import com.lifePill.poscashierservice.entity.Cashier;
@@ -10,7 +12,9 @@ import com.lifePill.poscashierservice.repository.CashierBankDetailsRepo;
 import com.lifePill.poscashierservice.repository.CashierRepo;
 import com.lifePill.poscashierservice.service.CashierService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,14 +28,17 @@ public class CashierServiceIMPL implements CashierService {
     @Autowired
     private CashierBankDetailsRepo cashierBankDetailsRepo;
 
+    @Autowired
+    private RestTemplate restTemplate;
+
     @Override
-    public String saveCashier(CashierDTO cashierDTO){
+    public String saveCashier(CashierDTO cashierDTO) {
         // check if the cashier already exists email or id
         if (cashierRepo.existsById(cashierDTO.getCashierId()) || cashierRepo.existsAllByCashierEmail(cashierDTO.getCashierEmail())) {
             throw new EntityDuplicationException("Cashier already exists");
         } else {
 
-        Cashier cashier = new Cashier(
+            Cashier cashier = new Cashier(
                     cashierDTO.getCashierId(),
                     cashierDTO.getCashierNicName(),
                     cashierDTO.getCashierFirstName(),
@@ -46,7 +53,8 @@ public class CashierServiceIMPL implements CashierService {
                     cashierDTO.getPin(),
                     cashierDTO.getGender(),
                     cashierDTO.getDateOfBirth(),
-                    cashierDTO.getRole()
+                    cashierDTO.getRole(),
+                    cashierDTO.getBranchCode()
                     //  (Set<Order>) cashierDTO.getOrder()
             );
 
@@ -58,7 +66,7 @@ public class CashierServiceIMPL implements CashierService {
 
     @Override
     public String updateCashier(CashierUpdateDTO cashierUpdateDTO) {
-        if (cashierRepo.existsById(cashierUpdateDTO.getCashierId())){
+        if (cashierRepo.existsById(cashierUpdateDTO.getCashierId())) {
             Cashier cashier = cashierRepo.getReferenceById(cashierUpdateDTO.getCashierId());
 
             cashier.setCashierNicName(cashierUpdateDTO.getCashierNicName());
@@ -67,20 +75,21 @@ public class CashierServiceIMPL implements CashierService {
             cashier.setCashierPhone(cashierUpdateDTO.getCashierPhone());
             cashier.setRole(cashierUpdateDTO.getRole());
             cashier.setCashierSalary(cashierUpdateDTO.getCashierSalary());
+            cashier.setBranchCode(cashierUpdateDTO.getBranchCode());
 
             cashierRepo.save(cashier);
 
             System.out.println(cashier);
 
             return "UPDATED CUSTOMER";
-        }else {
+        } else {
             throw new NotFoundException("No data found for that id");
         }
     }
 
     @Override
     public String updateCashierAccountDetails(CashierUpdateAccountDetailsDTO cashierUpdateAccountDetailsDTO) {
-        if (cashierRepo.existsById(cashierUpdateAccountDetailsDTO.getCashierId())){
+        if (cashierRepo.existsById(cashierUpdateAccountDetailsDTO.getCashierId())) {
             Cashier cashier = cashierRepo.getReferenceById(cashierUpdateAccountDetailsDTO.getCashierId());
 
             cashier.setCashierFirstName(cashierUpdateAccountDetailsDTO.getCashierFirstName());
@@ -94,14 +103,14 @@ public class CashierServiceIMPL implements CashierService {
             System.out.println(cashier);
 
             return "Successfully Update cashier account details";
-        }else {
+        } else {
             throw new NotFoundException("No data found for that id");
         }
     }
 
     @Override
     public String updateCashierPassword(CashierPasswordResetDTO cashierPasswordResetDTO) {
-        if (cashierRepo.existsById(cashierPasswordResetDTO.getCashierId())){
+        if (cashierRepo.existsById(cashierPasswordResetDTO.getCashierId())) {
             Cashier cashier = cashierRepo.getReferenceById(cashierPasswordResetDTO.getCashierId());
 
             cashier.setCashierPassword(cashierPasswordResetDTO.getCashierPassword());
@@ -110,14 +119,14 @@ public class CashierServiceIMPL implements CashierService {
             System.out.println(cashier);
 
             return "Successfully Reset cashier password";
-        }else {
+        } else {
             throw new NotFoundException("No data found for that id");
         }
     }
 
     @Override
     public String updateRecentPin(CashierRecentPinUpdateDTO cashierRecentPinUpdateDTO) {
-        if (cashierRepo.existsById(cashierRecentPinUpdateDTO.getCashierId())){
+        if (cashierRepo.existsById(cashierRecentPinUpdateDTO.getCashierId())) {
             Cashier cashier = cashierRepo.getReferenceById(cashierRecentPinUpdateDTO.getCashierId());
 
             cashier.setPin(cashierRecentPinUpdateDTO.getPin());
@@ -126,7 +135,7 @@ public class CashierServiceIMPL implements CashierService {
             System.out.println(cashier);
 
             return "Successfully Reset cashier PIN";
-        }else {
+        } else {
             throw new NotFoundException("No data found for that id");
         }
     }
@@ -173,11 +182,18 @@ public class CashierServiceIMPL implements CashierService {
 
 
     @Override
-    public CashierDTO getCashierById(int cashierId) {
-        if (cashierRepo.existsById(cashierId)){
+    public ApiResponseDTO getCashierById(int cashierId) {
+        if (cashierRepo.existsById(cashierId)) {
             Cashier cashier = cashierRepo.getReferenceById(cashierId);
 
-            // can use mappers to easily below that task
+            String branchBaseUrl = "http://localhost:8083/lifepill/v1/branch/get-all-branches?branchCode=%s";
+            String branchCode = cashier.getBranchCode();
+            String url = String.format(branchBaseUrl, branchCode);
+
+            ResponseEntity<BranchDTO> responseEntity = restTemplate.getForEntity(url, BranchDTO.class);
+
+            BranchDTO branchDTO = responseEntity.getBody();
+
             CashierDTO cashierDTO = new CashierDTO(
                     cashier.getCashierId(),
                     cashier.getCashierNicName(),
@@ -193,33 +209,41 @@ public class CashierServiceIMPL implements CashierService {
                     cashier.getGender(),
                     cashier.getDateOfBirth(),
                     cashier.getRole(),
-                    cashier.getPin()
-                    //(Order) cashier.getOrders()
+                    cashier.getPin(),
+                    cashier.getBranchCode()
+                    // (Order) cashier.getOrders()
             );
-            return cashierDTO;
-        }else {
-           throw  new NotFoundException("No cashier found for that id");
+
+            ApiResponseDTO apiResponseDTO = new ApiResponseDTO();
+
+            apiResponseDTO.setCashierDTO(cashierDTO);
+            apiResponseDTO.setBranchDTO(branchDTO);
+
+            return apiResponseDTO;
+        } else {
+            throw new NotFoundException("No cashier found for that id");
         }
 
     }
 
     @Override
     public String deleteCashier(int cashierId) {
-        if (cashierRepo.existsById(cashierId)){
+        if (cashierRepo.existsById(cashierId)) {
             cashierRepo.deleteById(cashierId);
 
-            return "deleted succesfully : "+ cashierId;
-        }else {
+            return "deleted succesfully : " + cashierId;
+        } else {
             throw new NotFoundException("No cashier found for that id");
         }
     }
+
     @Override
     public List<CashierUpdateBankAccountDTO> getAllCashiersBankDetails() {
         List<CashierBankDetails> getAllCashiersBankDetails = cashierBankDetailsRepo.findAll();
 
-        if (getAllCashiersBankDetails.size()>0){
+        if (getAllCashiersBankDetails.size() > 0) {
             List<CashierUpdateBankAccountDTO> cashierUpdateBankAccountDTOList = new ArrayList<>();
-            for (CashierBankDetails cashierBankDetails: getAllCashiersBankDetails){
+            for (CashierBankDetails cashierBankDetails : getAllCashiersBankDetails) {
                 CashierUpdateBankAccountDTO cashierUpdateBankAccountDTO = new CashierUpdateBankAccountDTO(
                         cashierBankDetails.getCashierId(),
                         cashierBankDetails.getBankName(),
@@ -232,17 +256,18 @@ public class CashierServiceIMPL implements CashierService {
                 cashierUpdateBankAccountDTOList.add(cashierUpdateBankAccountDTO);
             }
             return cashierUpdateBankAccountDTOList;
-        }else {
+        } else {
             throw new NotFoundException("No Cashier Bank Details Found");
         }
     }
+
     @Override
     public List<CashierDTO> getAllCashiers() {
         List<Cashier> getAllCashiers = cashierRepo.findAll();
 
-        if (getAllCashiers.size() > 0){
+        if (getAllCashiers.size() > 0) {
             List<CashierDTO> cashierDTOList = new ArrayList<>();
-            for (Cashier cashier: getAllCashiers){
+            for (Cashier cashier : getAllCashiers) {
                 CashierDTO cashierDTO = new CashierDTO(
                         cashier.getCashierId(),
                         cashier.getCashierNicName(),
@@ -258,13 +283,14 @@ public class CashierServiceIMPL implements CashierService {
                         cashier.getGender(),
                         cashier.getDateOfBirth(),
                         cashier.getRole(),
-                        cashier.getPin()
-                      // (Order) cashier.getOrders()
+                        cashier.getPin(),
+                        cashier.getBranchCode()
+                        // (Order) cashier.getOrders()
                 );
                 cashierDTOList.add(cashierDTO);
             }
             return cashierDTOList;
-        }else {
+        } else {
             throw new NotFoundException("No Cashier Found");
         }
     }
@@ -273,9 +299,9 @@ public class CashierServiceIMPL implements CashierService {
     @Override
     public List<CashierDTO> getAllCashiersByActiveState(boolean activeState) {
         List<Cashier> getAllCashiers = cashierRepo.findByIsActiveStatusEquals(activeState);
-        if (getAllCashiers.size() > 0){
+        if (getAllCashiers.size() > 0) {
             List<CashierDTO> cashierDTOList = new ArrayList<>();
-            for (Cashier cashier: getAllCashiers){
+            for (Cashier cashier : getAllCashiers) {
                 CashierDTO cashierDTO = new CashierDTO(
                         cashier.getCashierId(),
                         cashier.getCashierNicName(),
@@ -291,14 +317,15 @@ public class CashierServiceIMPL implements CashierService {
                         cashier.getGender(),
                         cashier.getDateOfBirth(),
                         cashier.getRole(),
-                        cashier.getPin()
-                      //  (Order) cashier.getOrders()
+                        cashier.getPin(),
+                        cashier.getBranchCode()
+                        //  (Order) cashier.getOrders()
                 );
                 cashierDTOList.add(cashierDTO);
             }
             return cashierDTOList;
-        }else {
-           // throw new RuntimeException("No Cashier Found");
+        } else {
+            // throw new RuntimeException("No Cashier Found");
             throw new NotFoundException("No Cashier Found");
         }
     }

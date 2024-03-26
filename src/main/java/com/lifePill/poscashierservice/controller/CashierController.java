@@ -1,5 +1,6 @@
 package com.lifePill.poscashierservice.controller;
 
+import com.lifePill.poscashierservice.dto.ApiResponseDTO;
 import com.lifePill.poscashierservice.dto.CashierDTO;
 import com.lifePill.poscashierservice.dto.CashierUpdate.*;
 import com.lifePill.poscashierservice.service.CashierService;
@@ -53,9 +54,9 @@ public class CashierController {
     }
 
     @GetMapping(path = "/get-by-id",params = "id")
-    public CashierDTO getCashierById(@RequestParam(value = "id") int cashierId) {
-        CashierDTO cashierDTO = cashierService.getCashierById(cashierId);
-        return cashierDTO;
+    public ResponseEntity<ApiResponseDTO> getCashierById(@RequestParam(value = "id") int cashierId) {
+        ApiResponseDTO apiResponseDTO = cashierService.getCashierById(cashierId);
+        return new ResponseEntity<>(apiResponseDTO,HttpStatus.OK);
     }
 
     @DeleteMapping(path = "/delete-cashier/{id}")

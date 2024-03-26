@@ -1,6 +1,7 @@
 package com.lifePill.poscashierservice.service;
 
 
+import com.lifePill.poscashierservice.dto.ApiResponseDTO;
 import com.lifePill.poscashierservice.dto.CashierDTO;
 import com.lifePill.poscashierservice.dto.CashierUpdate.*;
 
@@ -10,7 +11,7 @@ public interface CashierService {
 
     public String saveCashier(CashierDTO cashierDTO);
     String updateCashier(CashierUpdateDTO cashierUpdateDTO);
-    CashierDTO getCashierById(int cashierId);
+    ApiResponseDTO getCashierById(int cashierId);
     String deleteCashier(int cashierId);
     List<CashierDTO> getAllCashiers();
     List<CashierDTO> getAllCashiersByActiveState(boolean activeState);
