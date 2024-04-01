@@ -56,12 +56,13 @@ public class Cashier {
     private Role role;
 //    @OneToMany(mappedBy = "cashiers")
 //    private Set<Order> orders;
+    @Column(name = "branch_code")
+    private String branchCode;
 
     @OneToOne(mappedBy = "cashier", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private CashierBankDetails cashierBankDetails;
 
-
-    public Cashier(int cashierId, String cashierNicName, String cashierFirstName, String cashierLastName, String cashierPassword, String cashierEmail, String cashierPhone, String cashierAddress, double cashierSalary, String cashierNic, boolean isActiveStatus, int pin, Gender gender, Date dateOfBirth, Role role) {
+    public Cashier(int cashierId, String cashierNicName, String cashierFirstName, String cashierLastName, String cashierPassword, String cashierEmail, String cashierPhone, String cashierAddress, double cashierSalary, String cashierNic, boolean isActiveStatus, int pin, Gender gender, Date dateOfBirth, Role role, String branchCode) {
         this.cashierId = cashierId;
         this.cashierNicName = cashierNicName;
         this.cashierFirstName = cashierFirstName;
@@ -77,5 +78,6 @@ public class Cashier {
         this.gender = gender;
         this.dateOfBirth = dateOfBirth;
         this.role = role;
+        this.branchCode = branchCode;
     }
 }
